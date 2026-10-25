@@ -1,0 +1,42 @@
+name: Build Naracodex Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-android:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.3.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify Godot project
+        run: |
+          test -f project.godot
+          test -f scenes/Battle.tscn
+          test -f scripts/battle.gd
+          godot --version
+
+      - name: Import project resources
+        run: godot --headless --editor --path . --quit
+
+      - name: Export Android APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/Naracodex.apk
+          test -s build/Naracodex.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Naracodex-Android-APK
+          path: build/Naracodex.apk
+          if-no-files-found: error
+          retention-days: 14
